@@ -105,26 +105,26 @@ app.post('/room', authMiddleware, async (req, res) => {
 
     const parrsed = CreateRoomSchema.safeParse(req.body)
     if (!parrsed.success) {
-        return res.json({
+        return res.status(400).json({
             message: "Invalid input"
         })
     }
 
     const userId = req.userId
     if (!userId) {
-        return res.json({
+        return res.status(401).json({
             message: "Unauthorized"
         })
     }
 
-    const isValid = await prismaClient.room.findUnique({
+    const existingRoom = await prismaClient.room.findUnique({
         where: {
             slug: parrsed.data.room
         }
     })
 
-    if (isValid) {
-        return res.status(411).json({
+    if (existingRoom) {
+        return res.status(409).json({
             message: "Room already exists"
         })
     }
@@ -137,12 +137,28 @@ app.post('/room', authMiddleware, async (req, res) => {
     })
 
     res.json({
-        roomId: room.id
+        roomId: room.id,
+        slug: room.slug
     })
 })
 
 app.get('/chats/:roomId', async (req, res) => {
-    const roomId = parseInt(req.params.roomId)
+    // May be the roomId passed by someone is 'abc' that result into DB query breaks silently
+    const roomId = parseInt(req.params.roomId)       //   This is not just enough
+
+    if (isNaN(roomId)) {
+        return res.status(400).json({ message: "Invalid roomId" });
+    }
+
+    const room = await prismaClient.room.findUnique({
+        where: { id: roomId }
+    });
+
+    if (!room) {
+        return res.status(404).json({
+            message: "Room not found"
+        });
+    }
 
     const messages = await prismaClient.chat.findMany({
         where: {
@@ -151,7 +167,7 @@ app.get('/chats/:roomId', async (req, res) => {
         orderBy: {
             id: "desc"
         },
-        take: 50
+        take: 100
     })
 
     res.json({
@@ -161,13 +177,33 @@ app.get('/chats/:roomId', async (req, res) => {
 
 app.get("/room/:slug", async (req, res) => {
     const slug = req.params.slug
-    const roomId = await prismaClient.room.findFirst({
+    const room = await prismaClient.room.findFirst({
         where: {
             slug: slug
         }
     })
+
+    if(!room){
+        return res.status(404).json({
+            message: "Room not found"
+        })
+    }
+
     res.json({
-        roomId
+        roomId: room.id,
+        slug: room.slug
+    })
+})
+
+app.get('/rooms', async (req, res) =>{
+    const rooms = await prismaClient.room.findMany({
+        orderBy:{
+            createdAT:"desc"
+        }
+    });
+
+    res.json({
+        rooms
     })
 })
 
