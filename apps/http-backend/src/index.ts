@@ -41,15 +41,19 @@ app.post('/signup', async (req, res) => {
                 photo
             }
         })
+        const token = jwt.sign({
+            userId: user.id
+        }, JWT_SECRET!);
 
         res.json({
-            userId: user.id,
+            token,
             message: "User Created Successfully"
-        })
+        });
+
     } catch (e: any) {
         return res.status(411).json({
-            message:"Something went wrong", 
-            error: e.message   
+            message: "Something went wrong",
+            error: e.message
         })
     }
 
@@ -90,7 +94,7 @@ app.post('/signin', async (req, res) => {
     const userId = user.id
     const token = jwt.sign({
         userId
-    }, JWT_SECRET!)
+    }, JWT_SECRET)
 
     res.json({
         token
@@ -98,56 +102,56 @@ app.post('/signin', async (req, res) => {
 })
 
 app.post('/room', authMiddleware, async (req, res) => {
-    
+
     const parrsed = CreateRoomSchema.safeParse(req.body)
-    if(!parrsed.success){
+    if (!parrsed.success) {
         return res.json({
-            message:"Incorrect inputs"
+            message: "Invalid input"
         })
     }
 
     const userId = req.userId
-    if(!userId){
+    if (!userId) {
         return res.json({
-            message:"authentication is failed"
+            message: "Unauthorized"
         })
     }
 
     const isValid = await prismaClient.room.findUnique({
-        where:{
-            slug:parrsed.data.room
+        where: {
+            slug: parrsed.data.room
         }
     })
 
-    if(isValid){
+    if (isValid) {
         return res.status(411).json({
-            message:"Room with this name is already exist, try another name"
+            message: "Room already exists"
         })
     }
 
     const room = await prismaClient.room.create({
-        data:{
+        data: {
             slug: parrsed.data.room,
             adminId: userId,
         }
     })
 
     res.json({
-        rooId: room.id
+        roomId: room.id
     })
 })
 
-app.get('/chats/:roomId', async (req , res ) => {
+app.get('/chats/:roomId', async (req, res) => {
     const roomId = parseInt(req.params.roomId)
 
     const messages = await prismaClient.chat.findMany({
-        where:{
-            roomId:roomId
+        where: {
+            roomId: roomId
         },
-        orderBy:{
-            id:"desc"
+        orderBy: {
+            id: "desc"
         },
-        take:50
+        take: 50
     })
 
     res.json({
@@ -158,8 +162,8 @@ app.get('/chats/:roomId', async (req , res ) => {
 app.get("/room/:slug", async (req, res) => {
     const slug = req.params.slug
     const roomId = await prismaClient.room.findFirst({
-        where:{
-            slug:slug
+        where: {
+            slug: slug
         }
     })
     res.json({

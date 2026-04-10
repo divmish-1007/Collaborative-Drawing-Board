@@ -2,14 +2,19 @@
 import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, User } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from "next/navigation";
+import axios from "axios";
+import { BACKEND_URL } from '@/config';
 
 export default function SignUp() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const router = useRouter();
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,8 +22,9 @@ export default function SignUp() {
     setIsLoading(true);
 
     try {
-      if (!email || !name || !password) {
+      if (!username || !name || !password) {
         setError('Please fill in all fields.');
+        setIsLoading(false);
         return;
       }
 
@@ -27,7 +33,19 @@ export default function SignUp() {
         return;
       }
 
-      console.log('Sign up attempt with:', { email, name, password });
+      const res = await axios.post(`${BACKEND_URL}/signup`, {
+        username,
+        password,
+        name,
+        photo: "" // optional for now
+      });
+
+      const token = res.data.token;
+
+      localStorage.setItem("token", token);
+
+      router.push("/dashboard");
+
     } catch (err) {
       setError('Failed to create account. Please try again.');
     } finally {
@@ -85,8 +103,8 @@ export default function SignUp() {
                 <input
                   id="email"
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150 ease-in-out"
                   placeholder="you@example.com"
                   required
@@ -149,9 +167,9 @@ export default function SignUp() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Already have an account?{' '}
-              <Link href= '/signin'>
+              <Link href='/signin'>
                 <button className="font-medium text-blue-600 hover:text-blue-500 transition">
-                    Sign in
+                  Sign in
                 </button>
               </Link>
             </p>

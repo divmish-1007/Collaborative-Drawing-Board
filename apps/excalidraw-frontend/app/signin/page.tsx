@@ -1,25 +1,56 @@
 "use client"
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
+import axios from 'axios';
+import { BACKEND_URL } from '@/config';
+import { useRouter } from "next/navigation";
 
 export default function SignIn() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const router = useRouter()
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      router.replace("/dashboard");
+    }
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isLoading) return;
+
     setError('');
-    setIsLoading(true);
+
+    if (!username || !password) {
+      setError("All fields are required")
+      return;
+    }
+
+    setIsLoading(true)
 
     try {
       // Authentication logic will go here
-      console.log('Sign in attempt with:', { email, password });
-    } catch (err) {
-      setError('Failed to sign in. Please check your credentials.');
+      const res = await axios.post(`${BACKEND_URL}/signin`, {
+        username,
+        password
+      });
+
+      const token = res.data.token;
+
+      localStorage.setItem("token", token);
+
+      router.replace("/dashboard");
+
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "Signin failed");
     } finally {
       setIsLoading(false);
     }
@@ -55,8 +86,8 @@ export default function SignIn() {
                 <input
                   id="email"
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-150 ease-in-out"
                   placeholder="you@example.com"
                   required
@@ -125,7 +156,7 @@ export default function SignIn() {
               Don't have an account?{' '}
               <Link href="/signup">
                 <button className="font-medium text-blue-600 hover:text-blue-500 transition">
-                    Sign up
+                  Sign up
                 </button>
               </Link>
             </p>
