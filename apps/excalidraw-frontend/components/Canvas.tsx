@@ -12,8 +12,9 @@ export function Canvas({ roomId, socket }: { roomId: string, socket: WebSocket }
             return
         }
 
-        initDraw(canvasRef.current, roomId, socket)
+        const cleanUp = initDraw(canvasRef.current, roomId, socket)
 
+        return cleanUp;
         
     }, [roomId, socket])
 
