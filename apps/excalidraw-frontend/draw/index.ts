@@ -2,26 +2,31 @@ import { BACKEND_URL } from "@/config"
 import axios from "axios"
 
 type Shape = {
+    id: string,
     type: "rect",
     x: number
     y: number
     width: number
     height: number
 } | {
+    id:string,
     type: "circle",
     centerX: number
     centerY: number
     radius: number
 }
 
+type Operation = { type: "ADD", shape: Shape } | { type: "DELETE", shapeId: string }
+
 const clientId = Math.random().toString()
+
+
 
 export function initDraw(canvas: HTMLCanvasElement, roomId: string, socket: WebSocket) {
     const ctx = canvas.getContext("2d")
 
-
     let existingShapes: Shape[] = []
-
+    let undoStack: Operation[] = []
 
     if (!ctx) {
         return
@@ -30,6 +35,32 @@ export function initDraw(canvas: HTMLCanvasElement, roomId: string, socket: WebS
     let clicked = false
     let startX = 0
     let startY = 0
+
+    const applyOperation = (op: Operation) => {
+        if (op.type === "ADD") {
+            existingShapes.push(op.shape)
+        }
+
+        if(op.type === "DELETE"){
+            existingShapes = existingShapes.filter(x => x.id !== op.shapeId)
+        }
+        redraw()
+    }
+
+    const undo = () => {
+        const op = undoStack.pop();
+
+        if(!op) return;
+
+        applyOperation(op);
+
+        socket.send(JSON.stringify({
+            type:"operation",
+            op,
+            roomId,
+            clientId
+        }))
+    }
 
     const getCanvasCoords = (e: MouseEvent) => {
         const rect = canvas.getBoundingClientRect();
@@ -57,16 +88,11 @@ export function initDraw(canvas: HTMLCanvasElement, roomId: string, socket: WebS
     const handleSocketMessage = (event: MessageEvent) => {
         const res = JSON.parse(event.data)
 
-        if (res.type === "chat") {
-
+        if (res.type === "operation") {
             // Self drawn shape will be ignored
             if (res.clientId === clientId) return;
 
-            const parshedShape = JSON.parse(res.message)
-            existingShapes.push(parshedShape)
-            console.log("After WS receive:", existingShapes.length)
-            redraw();
-
+            applyOperation(res.op)
         }
     }
 
@@ -81,7 +107,7 @@ export function initDraw(canvas: HTMLCanvasElement, roomId: string, socket: WebS
         startY = pos.y
     }
 
-    const hanleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = (e: MouseEvent) => {
         if (!clicked) return
 
         const pos = getCanvasCoords(e)
@@ -104,6 +130,7 @@ export function initDraw(canvas: HTMLCanvasElement, roomId: string, socket: WebS
         const height = pos.y - startY
 
         const shape: Shape = {
+            id: crypto.randomUUID(),
             type: "rect",
             x: startX,
             y: startY,
@@ -111,35 +138,47 @@ export function initDraw(canvas: HTMLCanvasElement, roomId: string, socket: WebS
             height
         }
 
-        existingShapes.push(shape)
-        
-        redraw();
-
-        socket.send(
-            JSON.stringify({
-                type: "chat",
-                message: JSON.stringify(shape),
+        const op:Operation = {
+            type:"ADD",
+            shape
+        }
+        applyOperation(op)
+        // While we are creating and adding the shape at the same time we will have a record of undoStack in which the shapeId's of all the shapes will we stored
+    
+        undoStack.push({
+            type:"DELETE",
+            shapeId:shape.id
+        })
+        console.log("SENDING:", { shape, roomId, clientId })
+        socket.send(JSON.stringify({
+                type: "operation",
+                op,
                 roomId,
                 clientId
             }),
-
         )
     }
 
-    canvas.addEventListener("mousedown", handleMouseDown)
-    canvas.addEventListener("mousemove", hanleMouseMove)
-    canvas.addEventListener("mouseup", handleMouseUp)
+    const handleKeyDown = (e:KeyboardEvent) => {
+        if(e.ctrlKey && e.key === "z"){
+            undo()
+        }
+    }
+    window.addEventListener("keydown", handleKeyDown)
 
-    console.log("Shapes count:", existingShapes.length)
+    canvas.addEventListener("mousedown", handleMouseDown)
+    canvas.addEventListener("mousemove", handleMouseMove)
+    canvas.addEventListener("mouseup", handleMouseUp)
 
     return () => {
         isAlive = false;
 
         canvas.removeEventListener("mousedown", handleMouseDown)
-        canvas.removeEventListener("mousemove", hanleMouseMove)
+        canvas.removeEventListener("mousemove", handleMouseMove)
         canvas.removeEventListener("mouseup", handleMouseUp)
 
         socket.removeEventListener("message", handleSocketMessage)
+        window.removeEventListener("keydown", handleKeyDown)
     }
 
 
