@@ -118,12 +118,10 @@ export function initDraw(canvas: HTMLCanvasElement, roomId: string, socket: WebS
         ctx.lineWidth = 2
 
         if (selectedTool === "rect") {
-            console.log("rect is selected")
             ctx.strokeRect(startX, startY, width, height)
         }
 
         if (selectedTool === "circle") {
-            console.log("circle is selected")
             const radius = Math.sqrt(
                 Math.pow(pos.x - startX, 2) +
                 Math.pow(pos.y - startY, 2)

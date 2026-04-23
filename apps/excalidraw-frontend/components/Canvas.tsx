@@ -1,5 +1,5 @@
 "use client"
-import { initDraw } from "@/draw";
+import { initDraw } from "@/lib/canvasEngine";
 import { useEffect, useRef } from "react";
 
 
