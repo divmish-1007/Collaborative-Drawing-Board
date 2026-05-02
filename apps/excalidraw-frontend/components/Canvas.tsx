@@ -18,7 +18,7 @@ export function Canvas({ roomId, socket }: { roomId: string, socket: WebSocket }
         
     }, [roomId, socket])
 
-    return <div>
-        <canvas ref={canvasRef} width={2000} height={1000} ></canvas>
+    return <div className="overflow-hidden">
+        <canvas ref={canvasRef} width={window.innerWidth} height={window.innerHeight} ></canvas>
     </div>
 }
