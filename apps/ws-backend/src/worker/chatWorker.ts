@@ -6,7 +6,6 @@ const worker = new Worker(
     "chat-queue",
     async job => {
         const { roomId, message, userId } = job.data
-
         await prismaClient.chat.create({
             data: {
                 roomId:Number(roomId),

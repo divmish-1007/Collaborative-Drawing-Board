@@ -83,7 +83,6 @@ wss.on('connection', function connection(ws, request) {
         //   }
 
         if (parsedData.type === "operation") {
-
             const roomId = parsedData.roomId;
             const op = parsedData.op
             const clientId = parsedData.clientId

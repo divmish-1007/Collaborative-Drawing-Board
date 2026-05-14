@@ -78,9 +78,13 @@ export function initDraw(canvas: HTMLCanvasElement, roomId: string, socket: WebS
 
     let isAlive = true;
 
-    getExistingShapes(roomId).then((shapes) => {
+    getExistingShapes(roomId).then((operations) => {
         if (!isAlive) return;
-        existingShapes = shapes
+
+        operations.forEach((op: Operation) => {
+            applyOperation(op)
+        })
+
         redraw();
     })
 
