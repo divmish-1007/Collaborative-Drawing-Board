@@ -18,14 +18,12 @@ function App() {
             </div>
             <div className="flex items-center space-x-4">
               <Link href='/signin'>
-                <Button size="md" variant="secondary" 
-                onClick={() => alert('You hit onClick')} >
+                <Button size="md" variant="secondary">
                   Sign In
                 </Button>
               </Link>
               <Link href='/signup'>
-                <Button size="md" variant="primary" 
-                onClick={() => alert('You hit onClick')} >
+                <Button size="md" variant="primary">
                   Sign Up
                 </Button>
               </Link>
@@ -184,7 +182,7 @@ function App() {
               <span className="text-xl font-bold">Excalidraw</span>
             </div>
             <div className="text-gray-400 text-sm">
-              © 2024 Excalidraw. Open source virtual whiteboard.
+              © 2026 Excalidraw. Open source virtual whiteboard.
             </div>
           </div>
         </div>

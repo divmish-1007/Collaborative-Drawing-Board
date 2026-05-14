@@ -67,6 +67,16 @@ The project is structured using Turborepo with independently organized services:
 
 ---
 
+# Screenshots
+
+## Landing Page
+
+![Landing Page](./screenshots/landing-page.png)
+
+## Realtime Collaboration
+
+![Realtime Collaboration](./screenshots/RealtimeCollabration.png)
+
 # Architecture Overview
 
 ## High-Level System Flow
